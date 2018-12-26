@@ -4,16 +4,19 @@
 
 var express = require('express');
 var bodyParser = require('body-parser');
+var qs = require('qs');
+var _ = require('lodash');
+var url = require('url');
 
 var app = express();
 //app.use( bodyParser.json() );       // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
     extended: true
 }));
 
 var urlParser = require('./UrlParser');
 
-exports.jswiremock = function(port){
+exports.jswiremock = function (port) {
 
     server = app.listen(port, function () {
         var host = server.address().address;
@@ -25,19 +28,19 @@ exports.jswiremock = function(port){
     global.putRequestStubs = [];
     global.deleteRequestStubs = [];
 
-    this.addStub = function(mockRequest){
-        if(mockRequest.getRequestType() === "GET") {
+    this.addStub = function (mockRequest) {
+        if (mockRequest.getRequestType() === "GET") {
             global.getRequestStubs.push(mockRequest);
-        } else if(mockRequest.getRequestType() === "POST"){
+        } else if (mockRequest.getRequestType() === "POST") {
             global.postRequestStubs.push(mockRequest);
         }
     };
 
-    this.stopJSWireMock = function(){
+    this.stopJSWireMock = function () {
         server.close();
     };
 
-    this.buildResponse = function(res){
+    this.buildResponse = function (res) {
         //TODO
     };
 
@@ -50,77 +53,142 @@ exports.jswiremock = function(port){
     });
 
     app.get('/*', function (req, res) {
-        var returnedStub = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), getRequestStubs)
+        var returnedStubs = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), getRequestStubs)
 
-        if (returnedStub != null){
-            for(var key in returnedStub.getMockResponse().getHeader()){
+        var filteredStubs = filterStubsByQueryParams(filterStubsByHeaders(returnedStubs, req), req);
+
+        if (filteredStubs.length < 1) {
+            res.status(404);
+            res.send("Does not exist");
+        } else if (filteredStubs.length > 1) {
+            res.status(400);
+            res.send("Multi stubs match");
+        } else {
+            var returnedStub = filteredStubs[0];
+            for (var key in returnedStub.getMockResponse().getHeader()) {
                 res.set(key, returnedStub.getMockResponse().getHeader()[key]);
             }
             res.status(returnedStub.getMockResponse().getStatus());
             res.send(returnedStub.getMockResponse().getBody());
-        }
-        else{
-            res.status(404);
-            res.send("Does not exist");
         }
     });
 
     app.post('/*', function (req, res) {
-        var returnedStub = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), postRequestStubs)
+        var returnedStubs = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), postRequestStubs)
 
-        if (returnedStub != null){
-            //TODO - ONLY VERIFY POST REQUEST PARAMS
-            for(key in returnedStub.getPostParams()){
-                if(req.body[key] != null){
-                    if(req.body[key] === returnedStub.getPostParams()[key]){
-                        continue;
-                    }
-                } else {
-                    res.status(404);
-                    res.send("Does not exist");
-                }
-            }
+        var filteredStubs = filterStubsByPostParams(filterStubsByHeaders(returnedStubs, req), req);
 
-            for(var key in returnedStub.getMockResponse().getHeader()){
+        if (filteredStubs.length < 1) {
+            res.status(404);
+            res.send("Does not exist");
+        } else if (filteredStubs.length > 1) {
+            res.status(400);
+            res.send("Multi stubs match");
+        } else {
+            var returnedStub = filteredStubs[0];
+            for (var key in returnedStub.getMockResponse().getHeader()) {
                 res.set(key, returnedStub.getMockResponse().getHeader()[key]);
             }
             res.status(returnedStub.getMockResponse().getStatus());
             res.send(returnedStub.getMockResponse().getBody());
         }
-        else{
-            res.status(404);
-            res.send("Does not exist");
-        }
+
+        return this;
     });
+}
 
-    return this;
-};
-
-exports.urlEqualTo = function(url){
+exports.urlEqualTo = function (url) {
     var mockRequest = new MockRequest(url);
     return mockRequest;
 };
 
-exports.get = function(mockRequest){
+exports.get = function (mockRequest, queryParams, headers) {
     mockRequest.setRequestType("GET");
+    mockRequest.setQueryParams(queryParams);
+    mockRequest.setHeaders(headers);
     return mockRequest;
 };
 
-exports.post= function(mockRequest, postParams){
+exports.post = function (mockRequest, postParams, headers) {
     mockRequest.setRequestType("POST");
     mockRequest.setPostParams(postParams);
+    mockRequest.setHeaders(headers);
     return mockRequest;
 };
 
-exports.withPostParams = function(postParams){
+exports.withPostParams = function (postParams) {
     return postParams;
 };
 
-exports.stubFor = function(jsWireMock, mockRequest){
+exports.stubFor = function (jsWireMock, mockRequest) {
     jsWireMock.addStub(mockRequest);
 };
 
-exports.a_response = function(){
+function filterStubsByPostParams(stubs, req) {
+    // don't do filter for non-POST request
+    if (req.method !== 'POST') {
+        return stubs;
+    }
+    var body = req.body || {};
+
+    return stubs.filter(function (stub) {
+        var postParams = stub.getPostParams() || {};
+        if (_.isEmpty(postParams) && !_.isEmpty(body)) {
+            return false;
+        }
+        for (key in postParams) {
+            if (req.body[key] !== postParams[key]) {
+                return false;
+            }
+        }
+        return true;
+    });
+}
+
+function filterStubsByHeaders(stubs, req) {
+    var headers = req.headers || {};
+    console.log(headers);
+    return stubs.filter(function (stub) {
+        var stubHeaders = stub.getHeaders();
+        // if (_.isEmpty(stubHeaders && !_.isEmpty(headers))) {
+        //     return false;
+        // }
+        console.log(stubHeaders);
+        for (key in stubHeaders) {
+            if (headers[key] !== stubHeaders[key]) {
+                return false;
+            }
+        }
+        return true;
+    });
+}
+
+function filterStubsByQueryParams(stubs, req) {
+    // don't do filter for non-GET request
+    if (req.method !== 'GET') {
+        return stubs;
+    }
+    var query = url.parse(req.url, true).query || {};
+    return stubs.filter(function (stub) {
+        var stubQueryParams = stub.getQueryParams() || {};
+        if (_.isEmpty(stubQueryParams) && !_.isEmpty(query)) {
+            return false;
+        }
+        for (key in stubQueryParams) {
+            if (stubQueryParams[key] !== query[key]) {
+                return false;
+            }
+        }
+        return true;
+    });
+}
+
+function filterStubs(stubs, req) {
+    var stubsFilterByHeaders = filterStubsByHeaders(status, req);
+    return filterStubsByQueryParams(stubsFilterByHeaders, req);
+}
+
+exports.a_response = function () {
     return new MockResponse();
 };
 
@@ -129,56 +197,70 @@ function MockRequest(url) {
     this.mockResponse = null;
     this.requestType = null;
     this.postParams = null;
+    this.queryParams = null;
+    this.headers = null;
 
-    this.getUrl = function(){
+    this.getUrl = function () {
         return this.url;
     };
-    this.getMockResponse = function(){
+    this.getMockResponse = function () {
         return this.mockResponse;
     };
-    this.willReturn = function(mockResponse){
+    this.willReturn = function (mockResponse) {
         this.mockResponse = mockResponse;
         return this;
     };
-    this.setRequestType = function(requestType){
+    this.setRequestType = function (requestType) {
         this.requestType = requestType;
     };
-    this.getRequestType = function(){
+    this.getRequestType = function () {
         return this.requestType;
     };
-    this.setPostParams = function(postParams){
+    this.setPostParams = function (postParams) {
         this.postParams = postParams;
     };
-    this.getPostParams = function(){
+    this.getPostParams = function () {
         return this.postParams;
     };
+    this.setQueryParams = function (queryParams) {
+        this.queryParams = queryParams;
+    }
+    this.getQueryParams = function () {
+        return this.queryParams;
+    }
+    this.setHeaders = function (headers) {
+        this.headers = headers;
+    }
+    this.getHeaders = function () {
+        return this.headers;
+    }
 }
 
-function MockResponse(){
+function MockResponse() {
     this.status = null;
-    this.withStatus = function(status){
+    this.withStatus = function (status) {
         this.status = status;
         return this;
     };
-    this.getStatus = function(){
+    this.getStatus = function () {
         return this.status;
     };
 
     this.body = null;
-    this.withBody = function(body){
+    this.withBody = function (body) {
         this.body = body;
         return this;
     };
-    this.getBody = function(){
+    this.getBody = function () {
         return this.body;
     };
 
     this.header = null;
-    this.withHeader = function(header){
+    this.withHeader = function (header) {
         this.header = header;
         return this;
     };
-    this.getHeader = function(){
+    this.getHeader = function () {
         return this.header;
     };
 }
