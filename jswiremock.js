@@ -4,14 +4,13 @@
 
 var express = require('express');
 var bodyParser = require('body-parser');
-var qs = require('qs');
 var _ = require('lodash');
 var url = require('url');
 
 var app = express();
-//app.use( bodyParser.json() );       // to support JSON-encoded bodies
+app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
-    extended: true
+    extended: true,
 }));
 
 var urlParser = require('./UrlParser');
@@ -66,7 +65,7 @@ exports.jswiremock = function (port) {
         } else {
             var returnedStub = filteredStubs[0];
             for (var key in returnedStub.getMockResponse().getHeader()) {
-                res.set(key, returnedStub.getMockResponse().getHeader()[key]);
+                res.setHeader(key, returnedStub.getMockResponse().getHeader()[key]);
             }
             res.status(returnedStub.getMockResponse().getStatus());
             res.send(returnedStub.getMockResponse().getBody());
@@ -87,7 +86,7 @@ exports.jswiremock = function (port) {
         } else {
             var returnedStub = filteredStubs[0];
             for (var key in returnedStub.getMockResponse().getHeader()) {
-                res.set(key, returnedStub.getMockResponse().getHeader()[key]);
+                res.setHeader(key, returnedStub.getMockResponse().getHeader()[key]);
             }
             res.status(returnedStub.getMockResponse().getStatus());
             res.send(returnedStub.getMockResponse().getBody());
@@ -147,20 +146,29 @@ function filterStubsByPostParams(stubs, req) {
 
 function filterStubsByHeaders(stubs, req) {
     var headers = req.headers || {};
-    console.log(headers);
-    return stubs.filter(function (stub) {
+    var returnStubs = [];
+    var matchPropertyCount = 0;
+    stubs.forEach(function (stub) {
         var stubHeaders = stub.getHeaders();
-        // if (_.isEmpty(stubHeaders && !_.isEmpty(headers))) {
-        //     return false;
-        // }
-        console.log(stubHeaders);
+        var currentCount = 0;
         for (key in stubHeaders) {
-            if (headers[key] !== stubHeaders[key]) {
-                return false;
+            if (headers[key.toLowerCase()] === stubHeaders[key]) {
+                currentCount++;
+            } else {
+                return;
             }
         }
-        return true;
+        if (currentCount > matchPropertyCount) {
+            while (returnStubs.length > 0) {
+                returnStubs.pop();
+            }
+            returnStubs.push(stub);
+            matchPropertyCount = currentCount;
+        } else if (currentCount == matchPropertyCount) {
+            returnStubs.push(stub);
+        }
     });
+    return returnStubs;
 }
 
 function filterStubsByQueryParams(stubs, req) {

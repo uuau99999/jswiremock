@@ -8,7 +8,7 @@ jswiremocklib = require('../jswiremock'), jswiremock = jswiremocklib.jswiremock,
 
 var jswiremock = new jswiremock(5001); //port
 
-stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/delete/"))
+stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/create/"))
     .willReturn(a_response()
         .withStatus(200)
         .withHeader({
@@ -32,6 +32,15 @@ stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/delete/"), {}, {
             "Content-Type": "application/json"
         }).withBody("[{\"status\":\"ok\"}]")));
 
+stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/delete/"), {}, {
+        authorization: 'Bearer token',
+        extraKey: 'extra value'
+    })
+    .willReturn(a_response()
+        .withStatus(200).withHeader({
+            "Content-Type": "application/json"
+        }).withBody("[{\"status\":\"yes\"}]")));
+
 
 stubFor(jswiremock, post(urlEqualTo("/login"), {
         username: "captainkirk",
@@ -39,8 +48,10 @@ stubFor(jswiremock, post(urlEqualTo("/login"), {
     })
     .willReturn(a_response()
         .withStatus(200)
-        .withHeader({})
-        .withBody("")));
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"done\"}]")));
 
 
 
@@ -54,26 +65,28 @@ var assert = require('assert');
 describe('e2e test', function () {
 
 
-    // it('can fire GET request', function (done) {
-    //     request({
-    //         uri: "http://localhost:5001/account/4444321/delete/",
-    //         method: "GET"
-    //     }, function (error, response, body) {
-    //         assert.strictEqual(body, "[{\"status\":\"success\"}]", error);
-    //         done();
-    //     });
-    // })
+    it('can fire GET request', function (done) {
+        request({
+            uri: "http://localhost:5001/account/4444321/create/",
+            method: "GET",
+            json: true
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"success\"}]", error);
+            done();
+        });
+    })
 
 
-    // it('can fire GET request', function (done) {
-    //     request({
-    //         uri: "http://localhost:5001/account/4444321/delete?token=invalid_token",
-    //         method: "GET"
-    //     }, function (error, response, body) {
-    //         assert.strictEqual(body, "[{\"status\":\"failed\"}]", error);
-    //         done();
-    //     });
-    // })
+    it('can fire GET request with queries', function (done) {
+        request({
+            uri: "http://localhost:5001/account/4444321/delete?token=invalid_token",
+            method: "GET",
+            json: true
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"failed\"}]", error);
+            done();
+        });
+    })
 
     it('can fire GET request with headers', function (done) {
         request({
@@ -81,10 +94,37 @@ describe('e2e test', function () {
             headers: {
                 authorization: 'Bearer token',
             },
-            method: "GET"
+            method: "GET",
+            json: true,
         }, function (error, response, body) {
-            console.log(body);
-            assert.strictEqual(body, "[{\"status\":\"ok\"}]", error);
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"ok\"}]", error);
+            done();
+        });
+    })
+
+    it('GET request with headers will go to the stub which header match the most', function (done) {
+        request({
+            uri: "http://localhost:5001/account/4444321/delete",
+            headers: {
+                authorization: 'Bearer token',
+                extraKey: 'extra value'
+            },
+            method: "GET",
+            json: true,
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"yes\"}]", error);
+            done();
+        });
+    })
+
+    it('can fire POST request with params', function (done) {
+        request.post("http://localhost:5001/login", {
+            json: {
+                username: "captainkirk",
+                password: "enterprise"
+            },
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done\"}]", error);
             done();
         });
     })

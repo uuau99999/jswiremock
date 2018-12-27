@@ -10,8 +10,7 @@
   "dependencies": {
     "body-parser": "1.17.1",
     "express": "~4.15.2",
-    "lodash": "^4.17.11",
-    "qs": "^6.6.0"
+    "lodash": "^4.17.11"
   },
   "devDependencies": {
     "assert": "1.3.0",
