@@ -7,36 +7,38 @@ var bodyParser = require('body-parser');
 var _ = require('lodash');
 var url = require('url');
 
-var app = express();
-app.use(bodyParser.json()); // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
-    extended: true,
-}));
-
 var urlParser = require('./UrlParser');
 
 exports.jswiremock = function (port) {
 
-    server = app.listen(port, function () {
-        var host = server.address().address;
-        var port = server.address().port;
+    var app = express();
+    app.use(bodyParser.json()); // to support JSON-encoded bodies
+    app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
+        extended: true,
+    }));
+
+    var that = this;
+
+    this.server = app.listen(port, function () {
+        var host = that.server.address().address;
+        var port = that.server.address().port;
     });
 
-    global.getRequestStubs = [];
-    global.postRequestStubs = [];
-    global.putRequestStubs = [];
-    global.deleteRequestStubs = [];
+    this.getRequestStubs = [];
+    this.postRequestStubs = [];
+    this.putRequestStubs = [];
+    this.deleteRequestStubs = [];
 
     this.addStub = function (mockRequest) {
         if (mockRequest.getRequestType() === "GET") {
-            global.getRequestStubs.push(mockRequest);
+            this.getRequestStubs.push(mockRequest);
         } else if (mockRequest.getRequestType() === "POST") {
-            global.postRequestStubs.push(mockRequest);
+            this.postRequestStubs.push(mockRequest);
         }
     };
 
     this.stopJSWireMock = function () {
-        server.close();
+        that.server.close();
     };
 
     this.buildResponse = function (res) {
@@ -52,7 +54,7 @@ exports.jswiremock = function (port) {
     });
 
     app.get('/*', function (req, res) {
-        var returnedStubs = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), getRequestStubs)
+        var returnedStubs = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), that.getRequestStubs)
 
         var filteredStubs = filterStubsByQueryParams(filterStubsByHeaders(returnedStubs, req), req);
 
@@ -73,7 +75,7 @@ exports.jswiremock = function (port) {
     });
 
     app.post('/*', function (req, res) {
-        var returnedStubs = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), postRequestStubs)
+        var returnedStubs = urlParser.hasMatchingStub(urlParser.buildUrlStorageLinkedList(req.originalUrl), that.postRequestStubs)
 
         var filteredStubs = filterStubsByPostParams(filterStubsByHeaders(returnedStubs, req), req);
 
