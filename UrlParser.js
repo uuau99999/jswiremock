@@ -108,7 +108,7 @@ function recursiveUrlLinkedListSearch(receiveUrlParts, storedUrlParts) {
 
 function checkEqualQueryParams(receivedQueryParams, storedQueryParams) {
     for (key in receivedQueryParams) {
-        if (storedQueryParams[key] != null) { //check if key exists in stored query params
+        if (storedQueryParams && storedQueryParams[key] != null) { //check if key exists in stored query params
             if (storedQueryParams[key] === receivedQueryParams[key] || receivedQueryParams[key].match(/(\:\w+)/) != null) {
                 return true;
             }
