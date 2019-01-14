@@ -1,6 +1,6 @@
 {
   "name": "node-jswiremock",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A library used for stubbing and mocking web services.",
   "scripts": {
     "test": "mocha tests/*",
@@ -9,6 +9,7 @@
   "private": false,
   "dependencies": {
     "body-parser": "1.17.1",
+    "deep-equal": "^1.0.1",
     "express": "~4.15.2",
     "lodash": "^4.17.11"
   },

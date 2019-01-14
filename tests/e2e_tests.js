@@ -53,6 +53,28 @@ stubFor(jswiremock, post(urlEqualTo("/login"), {
         })
         .withBody("[{\"status\":\"done\"}]")));
 
+stubFor(jswiremock, post(urlEqualTo("/login"), {
+        testObject: {
+            a: 1,
+            b: 2
+        },
+        testArray: [{
+                a: 1,
+                b: 2
+            },
+            {
+                c: 1,
+                d: 2
+            }
+        ]
+    })
+    .willReturn(a_response()
+        .withStatus(200)
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"haha\"}]")));
+
 
 
 /*
@@ -125,6 +147,29 @@ describe('e2e test', function () {
             },
         }, function (error, response, body) {
             assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done\"}]", error);
+            done();
+        });
+    })
+
+    it('can fire POST request with params nested with object and array', function (done) {
+        request.post("http://localhost:5001/login", {
+            json: {
+                testObject: {
+                    a: 1,
+                    b: 2
+                },
+                testArray: [{
+                        a: 1,
+                        b: 2
+                    },
+                    {
+                        c: 1,
+                        d: 2
+                    }
+                ]
+            },
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"haha\"}]", error);
             done();
         });
     })

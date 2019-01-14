@@ -9,6 +9,8 @@ var url = require('url');
 
 var urlParser = require('./UrlParser');
 
+var equal = require('deep-equal');
+
 exports.jswiremock = function (port) {
 
     var app = express();
@@ -138,7 +140,7 @@ function filterStubsByPostParams(stubs, req) {
             return false;
         }
         for (key in postParams) {
-            if (req.body[key] !== postParams[key]) {
+            if (!equal(body[key], postParams[key])) {
                 return false;
             }
         }
