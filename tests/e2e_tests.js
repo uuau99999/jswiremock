@@ -3,8 +3,8 @@
  * Integration test to be run manually for now.
  */
 
-var jswiremocklib, jswiremock, stubFor, get, post, urlEqualTo, a_response;
-jswiremocklib = require('../jswiremock'), jswiremock = jswiremocklib.jswiremock, stubFor = jswiremocklib.stubFor, get = jswiremocklib.get, post = jswiremocklib.post, urlEqualTo = jswiremocklib.urlEqualTo, a_response = jswiremocklib.a_response, stopJSWireMock = jswiremocklib.stopJSWireMock;
+var jswiremocklib, jswiremock, stubFor, get, post, put, _delete, patch, options, urlEqualTo, a_response;
+jswiremocklib = require('../jswiremock'), jswiremock = jswiremocklib.jswiremock, stubFor = jswiremocklib.stubFor, get = jswiremocklib.get, post = jswiremocklib.post, put = jswiremocklib.put, patch = jswiremocklib.patch, _delete = jswiremocklib.delete, options = jswiremocklib.options, urlEqualTo = jswiremocklib.urlEqualTo, a_response = jswiremocklib.a_response, stopJSWireMock = jswiremocklib.stopJSWireMock;
 
 var jswiremock = new jswiremock(5001); //port
 
@@ -76,6 +76,49 @@ stubFor(jswiremock, post(urlEqualTo("/login"), {
         .withBody("[{\"status\":\"haha\"}]")));
 
 
+stubFor(jswiremock, put(urlEqualTo("/login"), {
+        username: "captainkirk",
+        password: "enterprise"
+    })
+    .willReturn(a_response()
+        .withStatus(200)
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"done\"}]")));
+
+stubFor(jswiremock, _delete(urlEqualTo("/login"), {
+        username: "captainkirk",
+        password: "enterprise"
+    })
+    .willReturn(a_response()
+        .withStatus(200)
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"done\"}]")));
+
+stubFor(jswiremock, patch(urlEqualTo("/login"), {
+        username: "captainkirk",
+        password: "enterprise"
+    })
+    .willReturn(a_response()
+        .withStatus(200)
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"done\"}]")));
+
+stubFor(jswiremock, options(urlEqualTo("/login"), {
+        username: "captainkirk",
+        password: "enterprise"
+    })
+    .willReturn(a_response()
+        .withStatus(200)
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"done\"}]")));
 
 /*
  * Actual call to the stub below.
@@ -170,6 +213,42 @@ describe('e2e test', function () {
             },
         }, function (error, response, body) {
             assert.strictEqual(JSON.stringify(body), "[{\"status\":\"haha\"}]", error);
+            done();
+        });
+    })
+
+    it('can fire PUT request with params', function (done) {
+        request.put("http://localhost:5001/login", {
+            json: {
+                username: "captainkirk",
+                password: "enterprise"
+            },
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done\"}]", error);
+            done();
+        });
+    })
+
+    it('can fire PATCH request with params', function (done) {
+        request.patch("http://localhost:5001/login", {
+            json: {
+                username: "captainkirk",
+                password: "enterprise"
+            },
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done\"}]", error);
+            done();
+        });
+    })
+
+    it('can fire DELETE request with params', function (done) {
+        request.delete("http://localhost:5001/login", {
+            json: {
+                username: "captainkirk",
+                password: "enterprise"
+            },
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done\"}]", error);
             done();
         });
     })
