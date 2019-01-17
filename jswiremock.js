@@ -13,6 +13,10 @@ var equal = require('deep-equal');
 
 var METHODS = ["GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
 
+var __log = function (msg) {
+    return console.log('\x1b[33m%s\x1b[0m', msg);
+}
+
 exports.jswiremock = function (port) {
 
     var app = express();
@@ -77,9 +81,17 @@ exports.jswiremock = function (port) {
         var filteredStubs = filterStubsByQueryParams(filterStubsByHeaders(returnedStubs, req), req);
         if (filteredStubs.length < 1) {
             res.status(404);
+            __log(`No stub matches with request:\n${JSON.stringify({
+                url: req.url,
+                method: req.method,
+                headers: req.headers,
+                queries: req.query,
+                body: req.body
+            }, null, "\t")}`)
             res.send("Does not exist");
         } else if (filteredStubs.length > 1) {
             res.status(400);
+            // __log(`Multi stubs match:\n${JSON.stringify(filteredStubs, null, "\t")}`)
             res.send("Multi stubs match");
         } else {
             var returnedStub = filteredStubs[0];
@@ -103,9 +115,16 @@ exports.jswiremock = function (port) {
 
             if (filteredStubs.length < 1) {
                 res.status(404);
+                __log(`No stub matches with request:\n${JSON.stringify({
+                    url: req.url,
+                    method: req.method,
+                    headers: req.headers,
+                    body: req.body
+                }, null, "\t")}`);
                 res.send("Does not exist");
             } else if (filteredStubs.length > 1) {
                 res.status(400);
+                // __log(`Multi stubs match:\n${JSON.stringify(filteredStubs, null, "\t")}`)
                 res.send("Multi stubs match");
             } else {
                 var returnedStub = filteredStubs[0];
