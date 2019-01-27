@@ -23,6 +23,10 @@ exports.jswiremock = function (port) {
     app.use(bodyParser.json()); // to support JSON-encoded bodies
     app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
         extended: true,
+        type: [
+            'application/x-www-form-urlencoded',
+            'application/x-www-form-urlencoded;charset=utf-8;'
+        ]
     }));
 
     var that = this;
