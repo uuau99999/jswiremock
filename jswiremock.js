@@ -23,10 +23,6 @@ exports.jswiremock = function (port) {
     app.use(bodyParser.json()); // to support JSON-encoded bodies
     app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
         extended: true,
-        type: [
-            'application/x-www-form-urlencoded',
-            'application/x-www-form-urlencoded;charset=utf-8;'
-        ]
     }));
 
     var that = this;
@@ -190,12 +186,7 @@ function filterStubsByPostParams(stubs, req) {
         if (_.isEmpty(postParams) && !_.isEmpty(body)) {
             return false;
         }
-        for (key in postParams) {
-            if (!equal(body[key], postParams[key])) {
-                return false;
-            }
-        }
-        return true;
+        return equal(body, postParams);
     });
 }
 
@@ -237,12 +228,7 @@ function filterStubsByQueryParams(stubs, req) {
         if (_.isEmpty(stubQueryParams) && !_.isEmpty(query)) {
             return false;
         }
-        for (key in stubQueryParams) {
-            if (stubQueryParams[key] !== query[key]) {
-                return false;
-            }
-        }
-        return true;
+        return equal(query, stubQueryParams);
     });
 }
 

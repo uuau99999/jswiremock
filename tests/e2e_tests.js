@@ -16,6 +16,17 @@ stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/create/"))
         })
         .withBody("[{\"status\":\"success\"}]")));
 
+stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/create/"), {
+        testParams: '123'
+    })
+    .willReturn(a_response()
+        .withStatus(200)
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"success_123\"}]")));
+
+
 stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/delete/"), {
         token: 'invalid_token'
     })
@@ -52,6 +63,18 @@ stubFor(jswiremock, post(urlEqualTo("/login"), {
             "Content-Type": "application/json"
         })
         .withBody("[{\"status\":\"done\"}]")));
+
+stubFor(jswiremock, post(urlEqualTo("/login"), {
+        username: "captainkirk",
+        password: "enterprise",
+        extra: '123'
+    })
+    .willReturn(a_response()
+        .withStatus(200)
+        .withHeader({
+            "Content-Type": "application/json"
+        })
+        .withBody("[{\"status\":\"done_123\"}]")));
 
 stubFor(jswiremock, post(urlEqualTo("/login"), {
         testObject: {
@@ -141,6 +164,17 @@ describe('e2e test', function () {
         });
     })
 
+    it('can fire GET request with exact query', function (done) {
+        request({
+            uri: "http://localhost:5001/account/4444321/create?testParams=123",
+            method: "GET",
+            json: true
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"success_123\"}]", error);
+            done();
+        });
+    })
+
 
     it('can fire GET request with queries', function (done) {
         request({
@@ -190,6 +224,19 @@ describe('e2e test', function () {
             },
         }, function (error, response, body) {
             assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done\"}]", error);
+            done();
+        });
+    })
+
+    it('can fire POST request with params', function (done) {
+        request.post("http://localhost:5001/login", {
+            json: {
+                username: "captainkirk",
+                password: "enterprise",
+                extra: '123'
+            },
+        }, function (error, response, body) {
+            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done_123\"}]", error);
             done();
         });
     })
