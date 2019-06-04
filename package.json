@@ -9,6 +9,7 @@
   "private": false,
   "dependencies": {
     "body-parser": "1.17.1",
+    "chalk": "^2.4.2",
     "deep-equal": "^1.0.1",
     "express": "~4.15.2",
     "lodash": "^4.17.11"
@@ -31,7 +32,7 @@
     "mock"
   ],
   "author": "Jaspreet Lidder (http://jaspreetlidder.com)",
-  "license": "GNU",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/uuau99999/jswiremock/issues"
   },
