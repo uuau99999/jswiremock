@@ -43,24 +43,33 @@ stubFor(
 	)
 );
 
-stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/create/"), {
-        testParams: '123'
-    })
-    .willReturn(a_response()
-        .withStatus(200)
-        .withHeader({
-            "Content-Type": "application/json"
-        })
-        .withBody("[{\"status\":\"success_123\"}]")));
+stubFor(
+	jswiremock,
+	get(urlEqualTo('/account/:varying_var/create/'), {
+		testParams: '123'
+	}).willReturn(
+		a_response()
+			.withStatus(200)
+			.withHeader({
+				'Content-Type': 'application/json'
+			})
+			.withBody('[{"status":"success_123"}]')
+	)
+);
 
-
-stubFor(jswiremock, get(urlEqualTo("/account/:varying_var/delete/"), {
-        token: 'invalid_token'
-    })
-    .willReturn(a_response()
-        .withStatus(200).withHeader({
-            "Content-Type": "application/json"
-        }).withBody("[{\"status\":\"failed\"}]")));
+stubFor(
+	jswiremock,
+	get(urlEqualTo('/account/:varying_var/delete/'), {
+		token: 'invalid_token'
+	}).willReturn(
+		a_response()
+			.withStatus(200)
+			.withHeader({
+				'Content-Type': 'application/json'
+			})
+			.withBody('[{"status":"failed"}]')
+	)
+);
 
 stubFor(
 	jswiremock,
@@ -117,6 +126,22 @@ stubFor(
 stubFor(
 	jswiremock,
 	post(urlEqualTo('/login'), {
+		username: 'captainkirk',
+		password: 'enterprise',
+		extra: '123'
+	}).willReturn(
+		a_response()
+			.withStatus(200)
+			.withHeader({
+				'Content-Type': 'application/json'
+			})
+			.withBody('[{"status":"done_123"}]')
+	)
+);
+
+stubFor(
+	jswiremock,
+	post(urlEqualTo('/login'), {
 		testObject: {
 			a: 1,
 			b: 2
@@ -140,40 +165,6 @@ stubFor(
 			.withBody('[{"status":"haha"}]')
 	)
 );
-
-stubFor(jswiremock, post(urlEqualTo("/login"), {
-        username: "captainkirk",
-        password: "enterprise",
-        extra: '123'
-    })
-    .willReturn(a_response()
-        .withStatus(200)
-        .withHeader({
-            "Content-Type": "application/json"
-        })
-        .withBody("[{\"status\":\"done_123\"}]")));
-
-stubFor(jswiremock, post(urlEqualTo("/login"), {
-        testObject: {
-            a: 1,
-            b: 2
-        },
-        testArray: [{
-                a: 1,
-                b: 2
-            },
-            {
-                c: 1,
-                d: 2
-            }
-        ]
-    })
-    .willReturn(a_response()
-        .withStatus(200)
-        .withHeader({
-            "Content-Type": "application/json"
-        })
-        .withBody("[{\"status\":\"haha\"}]")));
 
 stubFor(
 	jswiremock,
@@ -245,198 +236,211 @@ describe('e2e test', function() {
 		);
 	});
 
-describe('e2e test', function () {
-
-
-    it('can fire GET request', function (done) {
-        request({
-            uri: "http://localhost:5001/account/4444321/create/",
-            method: "GET",
-            json: true
-        }, function (error, response, body) {
-            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"success\"}]", error);
-            done();
-        });
-    })
-
-    it('can fire GET request with exact query', function (done) {
-        request({
-            uri: "http://localhost:5001/account/4444321/create?testParams=123",
-            method: "GET",
-            json: true
-        }, function (error, response, body) {
-            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"success_123\"}]", error);
-            done();
-        });
-    })
-
-
-	it('can fire GET request with headers', function(done) {
-		request(
-			{
-				uri: 'http://localhost:5001/account/4444321/delete',
-				headers: {
-					authorization: 'Bearer token'
+	describe('e2e test', function() {
+		it('can fire GET request', function(done) {
+			request(
+				{
+					uri: 'http://localhost:5001/account/4444321/create/',
+					method: 'GET',
+					json: true
 				},
-				method: 'GET',
-				json: true
-			},
-			function(error, response, body) {
-				assert.strictEqual(JSON.stringify(body), '[{"status":"ok"}]', error);
-				done();
-			}
-		);
-	});
-
-	it('GET request with headers will go to the stub which header match the most', function(done) {
-		request(
-			{
-				uri: 'http://localhost:5001/account/4444321/delete',
-				headers: {
-					authorization: 'Bearer token',
-					extraKey: 'extra value'
-				},
-				method: 'GET',
-				json: true
-			},
-			function(error, response, body) {
-				assert.strictEqual(JSON.stringify(body), '[{"status":"yes"}]', error);
-				done();
-			}
-		);
-	});
-
-	it('can fire POST request with params', function(done) {
-		request.post(
-			'http://localhost:5001/login',
-			{
-				json: {
-					username: 'captainkirk',
-					password: 'enterprise'
+				function(error, response, body) {
+					assert.strictEqual(
+						JSON.stringify(body),
+						'[{"status":"success"}]',
+						error
+					);
+					done();
 				}
-			},
-			function(error, response, body) {
-				assert.strictEqual(JSON.stringify(body), '[{"status":"done"}]', error);
-				done();
-			}
-		);
-	});
+			);
+		});
 
-	it('can fire POST request with params nested with object and array', function(done) {
-		request.post(
-			'http://localhost:5001/login',
-			{
-				json: {
-					testObject: {
-						a: 1,
-						b: 2
+		it('can fire GET request with exact query', function(done) {
+			request(
+				{
+					uri: 'http://localhost:5001/account/4444321/create?testParams=123',
+					method: 'GET',
+					json: true
+				},
+				function(error, response, body) {
+					assert.strictEqual(
+						JSON.stringify(body),
+						'[{"status":"success_123"}]',
+						error
+					);
+					done();
+				}
+			);
+		});
+
+		it('can fire GET request with headers', function(done) {
+			request(
+				{
+					uri: 'http://localhost:5001/account/4444321/delete',
+					headers: {
+						authorization: 'Bearer token'
 					},
-					testArray: [
-						{
+					method: 'GET',
+					json: true
+				},
+				function(error, response, body) {
+					assert.strictEqual(JSON.stringify(body), '[{"status":"ok"}]', error);
+					done();
+				}
+			);
+		});
+
+		it('GET request with headers will go to the stub which header match the most', function(done) {
+			request(
+				{
+					uri: 'http://localhost:5001/account/4444321/delete',
+					headers: {
+						authorization: 'Bearer token',
+						extraKey: 'extra value'
+					},
+					method: 'GET',
+					json: true
+				},
+				function(error, response, body) {
+					assert.strictEqual(JSON.stringify(body), '[{"status":"yes"}]', error);
+					done();
+				}
+			);
+		});
+
+		it('can fire POST request with params', function(done) {
+			request.post(
+				'http://localhost:5001/login',
+				{
+					json: {
+						username: 'captainkirk',
+						password: 'enterprise'
+					}
+				},
+				function(error, response, body) {
+					assert.strictEqual(
+						JSON.stringify(body),
+						'[{"status":"done"}]',
+						error
+					);
+					done();
+				}
+			);
+		});
+
+		it('can fire POST request with params nested with object and array', function(done) {
+			request.post(
+				'http://localhost:5001/login',
+				{
+					json: {
+						testObject: {
 							a: 1,
 							b: 2
 						},
-						{
-							c: 1,
-							d: 2
-						}
-					]
+						testArray: [
+							{
+								a: 1,
+								b: 2
+							},
+							{
+								c: 1,
+								d: 2
+							}
+						]
+					}
+				},
+				function(error, response, body) {
+					assert.strictEqual(
+						JSON.stringify(body),
+						'[{"status":"haha"}]',
+						error
+					);
+					done();
 				}
-			},
-			function(error, response, body) {
-				assert.strictEqual(JSON.stringify(body), '[{"status":"haha"}]', error);
-				done();
-			}
-		);
-	});
+			);
+		});
 
-    it('can fire POST request with params', function (done) {
-        request.post("http://localhost:5001/login", {
-            json: {
-                username: "captainkirk",
-                password: "enterprise",
-                extra: '123'
-            },
-        }, function (error, response, body) {
-            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"done_123\"}]", error);
-            done();
-        });
-    })
-
-    it('can fire POST request with params nested with object and array', function (done) {
-        request.post("http://localhost:5001/login", {
-            json: {
-                testObject: {
-                    a: 1,
-                    b: 2
-                },
-                testArray: [{
-                        a: 1,
-                        b: 2
-                    },
-                    {
-                        c: 1,
-                        d: 2
-                    }
-                ]
-            },
-        }, function (error, response, body) {
-            assert.strictEqual(JSON.stringify(body), "[{\"status\":\"haha\"}]", error);
-            done();
-        });
-    })
-
-	it('can fire PATCH request with params', function(done) {
-		request.patch(
-			'http://localhost:5001/login',
-			{
-				json: {
-					username: 'captainkirk',
-					password: 'enterprise'
+		it('can fire POST request with params', function(done) {
+			request.post(
+				'http://localhost:5001/login',
+				{
+					json: {
+						username: 'captainkirk',
+						password: 'enterprise',
+						extra: '123'
+					}
+				},
+				function(error, response, body) {
+					assert.strictEqual(
+						JSON.stringify(body),
+						'[{"status":"done_123"}]',
+						error
+					);
+					done();
 				}
-			},
-			function(error, response, body) {
-				assert.strictEqual(JSON.stringify(body), '[{"status":"done"}]', error);
-				done();
-			}
-		);
-	});
+			);
+		});
 
-	it('can fire DELETE request with params', function(done) {
-		request.delete(
-			'http://localhost:5001/login',
-			{
-				json: {
-					username: 'captainkirk',
-					password: 'enterprise'
+		it('can fire PATCH request with params', function(done) {
+			request.patch(
+				'http://localhost:5001/login',
+				{
+					json: {
+						username: 'captainkirk',
+						password: 'enterprise'
+					}
+				},
+				function(error, response, body) {
+					assert.strictEqual(
+						JSON.stringify(body),
+						'[{"status":"done"}]',
+						error
+					);
+					done();
 				}
-			},
-			function(error, response, body) {
-				assert.strictEqual(JSON.stringify(body), '[{"status":"done"}]', error);
-				done();
-			}
-		);
-	});
+			);
+		});
 
-	it('can clear stub', function(done) {
-		suppressConsole();
-		clearStubs(jswiremock);
-		request.patch(
-			'http://localhost:5001/login',
-			{
-				json: {
-					username: 'captainkirk',
-					password: 'enterprise'
+		it('can fire DELETE request with params', function(done) {
+			request.delete(
+				'http://localhost:5001/login',
+				{
+					json: {
+						username: 'captainkirk',
+						password: 'enterprise'
+					}
+				},
+				function(error, response, body) {
+					assert.strictEqual(
+						JSON.stringify(body),
+						'[{"status":"done"}]',
+						error
+					);
+					done();
 				}
-			},
-			function(error, response, body) {
-				assert.strictEqual(JSON.stringify(body), '"Does not exist"', error);
-				done();
-			}
-		);
-	});
+			);
+		});
 
-	after(function() {
-		jswiremock.stopJSWireMock();
+		it('can clear stub', function(done) {
+			suppressConsole();
+			clearStubs(jswiremock);
+			request.patch(
+				'http://localhost:5001/login',
+				{
+					json: {
+						username: 'captainkirk',
+						password: 'enterprise'
+					}
+				},
+				function(error, response, body) {
+					assert.strictEqual(JSON.stringify(body), '"Does not exist"', error);
+					done();
+				}
+			);
+		});
+
+		after(function() {
+			jswiremock.stopJSWireMock();
+		});
 	});
 });
